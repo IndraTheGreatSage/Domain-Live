@@ -1,8 +1,4 @@
 <!DOCTYPE html>
-<!-- 
-  ✦  Jujutsu + Face  ✦
-  Versi: 2.75 (fix gepeng di Android)
--->
 <html lang="id">
 <head>
     <meta charset="UTF-8" />
@@ -156,13 +152,12 @@
         }
 
         /* ============================================================= */
-        /* DOMAIN TAB — pakai padding-bottom biar kompatibel Android */
+        /* DOMAIN TAB — padding-bottom 75% biar kompatibel */
         /* ============================================================= */
         #camera-wrapper {
             position: relative;
             width: 100%;
             padding-bottom: 75%;
-            /* 4:3 */
             height: 0;
             border-radius: 24px;
             overflow: hidden;
@@ -186,7 +181,6 @@
         #camera-wrapper canvas {
             transform: scaleX(-1);
             pointer-events: none;
-            /* object-fit gak berlaku di canvas, tapi dia full 100% */
         }
 
         #handsign-hint {
@@ -313,7 +307,7 @@
         }
 
         /* ============================================================= */
-        /* FACE CHECK TAB — padding-bottom biar proporsional di Android */
+        /* FACE CHECK TAB — PAKAI JS UNTUK SET CANVAS SIZE */
         /* ============================================================= */
         .face-container {
             background: rgba(18, 18, 31, 0.6);
@@ -343,7 +337,6 @@
             position: relative;
             width: 100%;
             padding-bottom: 75%;
-            /* 4:3 */
             height: 0;
             border-radius: 16px;
             overflow: hidden;
@@ -351,22 +344,24 @@
             background: #000;
             box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8);
         }
-        #face-camera-wrapper video,
-        #face-camera-wrapper canvas {
+        #face-camera-wrapper video {
             position: absolute;
             top: 0;
             left: 0;
             width: 100% !important;
             height: 100% !important;
             display: block;
-        }
-        #face-camera-wrapper video {
             transform: scaleX(-1);
             object-fit: cover;
         }
         #face-camera-wrapper canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: block;
             transform: scaleX(-1);
             pointer-events: none;
+            /* ukuran diatur oleh JS */
         }
 
         #brightness-overlay {
@@ -544,7 +539,7 @@
 
                 <div id="face-camera-wrapper">
                     <video id="face-video" playsinline></video>
-                    <canvas id="face-canvas" width="640" height="480"></canvas>
+                    <canvas id="face-canvas"></canvas>
                     <div id="brightness-overlay"></div>
                 </div>
 
@@ -577,7 +572,7 @@
 
     <script>
         // ================================================================
-        //  🤘 Fix gepeng di Android — pake padding-bottom 75%
+        //  FIX GEPENG DI ANDROID — Canvas size diatur JS
         // ================================================================
 
         // ========== 1. TAB & KAMERA ==========
@@ -595,26 +590,33 @@
         let flashlightTrack = null;
         let brightnessActive = false;
 
-        function stopDomainCamera() {
-            if (domainCamera) { try { domainCamera.stop(); } catch (e) {} }
-            domainRunning = false;
-            domainCamera = null;
-            const v = document.getElementById('webcam');
-            if (v && v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop());
-                v.srcObject = null; }
+        // ========== 2. FUNGSI RESIZE CANVAS FACE ==========
+        function resizeFaceCanvas() {
+            const wrapper = document.getElementById('face-camera-wrapper');
+            const canvas = document.getElementById('face-canvas');
+            if (!wrapper || !canvas) return;
+
+            const rect = wrapper.getBoundingClientRect();
+            const w = rect.width;
+            const h = rect.height; // karena padding-bottom 75%, h = w * 0.75
+
+            // Set ukuran display canvas secara eksplisit (pixel perfect)
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
+
+            // Set ukuran logic canvas (tetap 4:3 agar landmark proporsional)
+            // Tapi kita sesuaikan dengan ukuran display agar tidak terjadi scaling
+            canvas.width = w;
+            canvas.height = h;
+
+            // Catatan: MediaPipe landmark koordinat 0-1 relatif terhadap canvas.width/height
+            // Jadi gambar landmark di posisi x * canvas.width, y * canvas.height
         }
 
-        function stopFaceCamera() {
-            if (faceCamera) { try { faceCamera.stop(); } catch (e) {} }
-            faceRunning = false;
-            faceCamera = null;
-            const v = document.getElementById('face-video');
-            if (v && v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop());
-                v.srcObject = null; }
-            if (flashlightActive) toggleFlashlight();
-        }
+        // Panggil resize saat window resize dan saat tab face diaktifkan
+        window.addEventListener('resize', resizeFaceCanvas);
 
-        // ========== 2. SENTER ==========
+        // ========== 3. SENTER ==========
         function toggleFlashlight() {
             const btn = document.getElementById('flashlightBtn');
             const vid = document.getElementById('face-video');
@@ -635,7 +637,7 @@
             btn.classList.toggle('active', flashlightActive);
         }
 
-        // ========== 3. BRIGHTNESS ==========
+        // ========== 4. BRIGHTNESS ==========
         function toggleBrightness() {
             const overlay = document.getElementById('brightness-overlay');
             const btn = document.getElementById('brightnessBtn');
@@ -645,7 +647,7 @@
             btn.classList.toggle('active', brightnessActive);
         }
 
-        // ========== 4. SWITCH KAMERA ==========
+        // ========== 5. SWITCH KAMERA ==========
         function switchCamera() {
             facingMode = (facingMode === 'user') ? 'environment' : 'user';
             const btn = document.getElementById('switchCamBtn');
@@ -658,7 +660,7 @@
             }
         }
 
-        // ========== 5. DOMAIN ==========
+        // ========== 6. DOMAIN ==========
         const DOMAINS = {
             gojo: {
                 name: '無限 の 虚空',
@@ -822,7 +824,7 @@
             }
         }
 
-        // ========== 6. FACE CHECK ==========
+        // ========== 7. FACE CHECK ==========
         let faceMeshInst = null,
             faceCamInst = null,
             faceInit = false;
@@ -942,6 +944,10 @@
             navigator.mediaDevices.getUserMedia(constraints).then(stream => {
                 fVideo.srcObject = stream;
                 fVideo.play();
+
+                // Resize canvas setelah video jalan
+                setTimeout(resizeFaceCanvas, 100);
+
                 if (faceCamInst) {
                     try { faceCamInst.stop(); } catch (e) {}
                 }
@@ -975,7 +981,7 @@
             if (flashlightActive) toggleFlashlight();
         }
 
-        // ========== 7. EVENT ==========
+        // ========== 8. EVENT ==========
         document.getElementById('flashlightBtn').addEventListener('click', toggleFlashlight);
         document.getElementById('brightnessBtn').addEventListener('click', toggleBrightness);
         document.getElementById('switchCamBtn').addEventListener('click', switchCamera);
@@ -996,11 +1002,13 @@
                     tabDomain.classList.remove('active');
                     stopDomainCamera();
                     startFaceCamera();
+                    // Resize canvas setelah tab aktif
+                    setTimeout(resizeFaceCanvas, 200);
                 }
             });
         });
 
-        // ========== 8. FALLBACK DRAW ==========
+        // ========== 9. FALLBACK DRAW ==========
         if (typeof drawConnectors === 'undefined') {
             window.drawConnectors = function(ctx, lm, conns, style) {
                 ctx.strokeStyle = style.color || '#00d4ff';
@@ -1061,13 +1069,13 @@
             ];
         }
 
-        // ========== 9. START ==========
+        // ========== 10. START ==========
         startDomainCamera();
 
-        console.log('🔥 Fix gepeng di Android!');
-        console.log('   Padding-bottom 75% biar 4:3.');
-        console.log('   Canvas & video full 100% tanpa stretch.');
-        console.log('   Kalo masih gepeng, kasih tahu.');
+        console.log('🔥 FIX GEPENG TERAKHIR!');
+        console.log('   Canvas face di-resize pake JS setiap kali resize.');
+        console.log('   Ukuran canvas = lebar wrapper x tinggi wrapper (4:3).');
+        console.log('   Kalo masih gepeng, berarti HP-mu udah hopeless wkwk.');
     </script>
 </body>
 </html>
