@@ -1,14 +1,16 @@
 <!DOCTYPE html>
+<!-- 
+  ✦  Jujutsu + Face  ✦
+  Versi: 2.75 (fix gepeng di Android)
+-->
 <html lang="id">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>⚡ Domain + Face</title>
 
-    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@700;900&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 
-    <!-- MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous">
@@ -154,12 +156,14 @@
         }
 
         /* ============================================================= */
-        /* DOMAIN TAB */
+        /* DOMAIN TAB — pakai padding-bottom biar kompatibel Android */
         /* ============================================================= */
         #camera-wrapper {
             position: relative;
             width: 100%;
-            aspect-ratio: 4 / 3;
+            padding-bottom: 75%;
+            /* 4:3 */
+            height: 0;
             border-radius: 24px;
             overflow: hidden;
             border: 2px solid rgba(255, 255, 255, 0.05);
@@ -174,15 +178,17 @@
             width: 100% !important;
             height: 100% !important;
             display: block;
-            object-fit: cover;
         }
         #camera-wrapper video {
             transform: scaleX(-1);
+            object-fit: cover;
         }
         #camera-wrapper canvas {
             transform: scaleX(-1);
             pointer-events: none;
+            /* object-fit gak berlaku di canvas, tapi dia full 100% */
         }
+
         #handsign-hint {
             position: absolute;
             bottom: 16px;
@@ -219,7 +225,7 @@
             font-weight: 700;
         }
 
-        /* DOMAIN OVERLAY */
+        /* ===== DOMAIN OVERLAY ===== */
         #domain-overlay {
             position: fixed;
             top: 0;
@@ -307,7 +313,7 @@
         }
 
         /* ============================================================= */
-        /* FACE CHECK TAB */
+        /* FACE CHECK TAB — padding-bottom biar proporsional di Android */
         /* ============================================================= */
         .face-container {
             background: rgba(18, 18, 31, 0.6);
@@ -336,7 +342,9 @@
         #face-camera-wrapper {
             position: relative;
             width: 100%;
-            aspect-ratio: 4 / 3;
+            padding-bottom: 75%;
+            /* 4:3 */
+            height: 0;
             border-radius: 16px;
             overflow: hidden;
             border: 2px solid rgba(255, 255, 255, 0.04);
@@ -351,35 +359,52 @@
             width: 100% !important;
             height: 100% !important;
             display: block;
-            object-fit: cover;
         }
         #face-camera-wrapper video {
             transform: scaleX(-1);
+            object-fit: cover;
         }
         #face-camera-wrapper canvas {
             transform: scaleX(-1);
             pointer-events: none;
         }
 
+        #brightness-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+            z-index: 5;
+            border-radius: 16px;
+        }
+        #brightness-overlay.active {
+            opacity: 0.5;
+        }
+
         .face-controls {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             margin-top: 14px;
             justify-content: center;
             flex-wrap: wrap;
         }
         .face-controls .btn {
-            padding: 10px 16px;
+            padding: 10px 18px;
             border: none;
             border-radius: 60px;
             font-weight: 700;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             cursor: pointer;
             background: #1a1a30;
             color: #ccc;
             transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
             font-family: 'Inter', sans-serif;
-            min-width: 70px;
+            min-width: 80px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             white-space: nowrap;
         }
@@ -408,56 +433,6 @@
             opacity: 0.4;
             cursor: not-allowed;
             transform: none !important;
-        }
-
-        /* Brightness Slider */
-        .brightness-slider-container {
-            margin-top: 12px;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-        }
-        .brightness-slider-container.show {
-            display: flex;
-        }
-        .brightness-slider-container label {
-            font-size: 0.75rem;
-            color: #888;
-            font-weight: 600;
-        }
-        .brightness-slider-container input[type="range"] {
-            width: 80%;
-            max-width: 300px;
-            height: 6px;
-            -webkit-appearance: none;
-            appearance: none;
-            background: linear-gradient(90deg, #1a1a30, #f1c40f);
-            border-radius: 10px;
-            outline: none;
-        }
-        .brightness-slider-container input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #f1c40f;
-            cursor: pointer;
-            box-shadow: 0 0 20px rgba(241, 196, 15, 0.4);
-        }
-        .brightness-slider-container input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #f1c40f;
-            cursor: pointer;
-            border: none;
-        }
-        .brightness-slider-container .brightness-value {
-            font-size: 0.8rem;
-            color: #aaa;
-            font-family: 'JetBrains Mono', monospace;
         }
 
         #face-status {
@@ -528,12 +503,9 @@
                 font-size: 2.2rem;
             }
             .face-controls .btn {
-                font-size: 0.65rem;
-                padding: 8px 10px;
-                min-width: 55px;
-            }
-            .brightness-slider-container input[type="range"] {
-                width: 90%;
+                font-size: 0.7rem;
+                padding: 8px 12px;
+                min-width: 60px;
             }
         }
     </style>
@@ -573,19 +545,13 @@
                 <div id="face-camera-wrapper">
                     <video id="face-video" playsinline></video>
                     <canvas id="face-canvas" width="640" height="480"></canvas>
+                    <div id="brightness-overlay"></div>
                 </div>
 
                 <div class="face-controls">
-                    <button class="btn btn-secondary" id="switchCamBtn">🔄 Ganti</button>
-                    <button class="btn btn-primary" id="brightnessBtn">💡 Terangin</button>
+                    <button class="btn btn-secondary" id="switchCamBtn">🔄 Ganti Kamera</button>
+                    <button class="btn btn-primary" id="brightnessBtn">💡 Terangin Layar</button>
                     <button class="btn btn-primary" id="flashlightBtn">🔦 Senter</button>
-                </div>
-
-                <!-- Brightness Slider -->
-                <div class="brightness-slider-container" id="brightnessSliderContainer">
-                    <label>Kecerahan Layar</label>
-                    <input type="range" id="brightnessSlider" min="0" max="100" value="100" />
-                    <span class="brightness-value" id="brightnessValue">100%</span>
                 </div>
 
                 <div id="face-status">⏳ tunggu wajah...</div>
@@ -611,10 +577,10 @@
 
     <script>
         // ================================================================
-        //  🤘 Kode ini makin kacau, tapi itu yang bikin berasa manusia.
+        //  🤘 Fix gepeng di Android — pake padding-bottom 75%
         // ================================================================
 
-        // ========== 1. TAB & KAMERA MANAGEMENT ==========
+        // ========== 1. TAB & KAMERA ==========
         const tabBtns = document.querySelectorAll('.tab-btn');
         const tabDomain = document.getElementById('tab-domain');
         const tabFace = document.getElementById('tab-face');
@@ -624,12 +590,10 @@
         let domainRunning = false,
             faceRunning = false;
 
-        // FACE STATE
         let facingMode = 'user';
         let flashlightActive = false;
         let flashlightTrack = null;
         let brightnessActive = false;
-        let brightnessValue = 100;
 
         function stopDomainCamera() {
             if (domainCamera) { try { domainCamera.stop(); } catch (e) {} }
@@ -650,89 +614,7 @@
             if (flashlightActive) toggleFlashlight();
         }
 
-        // ========== 2. BRIGHTNESS PAKSA (Screen Brightness API) ==========
-        function setScreenBrightness(value) {
-            // value: 0-100
-            const clamped = Math.max(0, Math.min(100, value));
-            brightnessValue = clamped;
-
-            // Update slider & display
-            document.getElementById('brightnessSlider').value = clamped;
-            document.getElementById('brightnessValue').textContent = clamped + '%';
-
-            // Metode 1: Screen Brightness API (experimental)
-            if (navigator.brightness && typeof navigator.brightness.setBrightness === 'function') {
-                try {
-                    // Convert 0-100 to 0-1
-                    navigator.brightness.setBrightness(clamped / 100);
-                    console.log('✅ Brightness set via Screen Brightness API:', clamped + '%');
-                    return true;
-                } catch (e) {
-                    console.warn('Screen Brightness API gagal:', e);
-                    // Fallback ke metode 2
-                }
-            }
-
-            // Metode 2: Fallback - overlay putih transparan (simulasi)
-            // Tapi karena kita pake overlay, kita apply ke body
-            // Cari atau buat overlay brightness
-            let overlay = document.getElementById('brightness-overlay-fallback');
-            if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.id = 'brightness-overlay-fallback';
-                overlay.style.cssText = `
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        background: white;
-                        pointer-events: none;
-                        z-index: 9999;
-                        transition: opacity 0.3s ease;
-                        opacity: 0;
-                    `;
-                document.body.appendChild(overlay);
-            }
-
-            // Opacity: 0 = normal, 0.6 = terang banget
-            // Tapi kita scale: 0-100 => 0 - 0.6
-            const opacity = (clamped / 100) * 0.6;
-            overlay.style.opacity = opacity;
-
-            // Toggle class untuk indikator
-            if (clamped > 5) {
-                overlay.classList.add('active');
-            } else {
-                overlay.classList.remove('active');
-            }
-
-            console.log('💡 Brightness (fallback overlay):', clamped + '%');
-            return true;
-        }
-
-        function toggleBrightness() {
-            const btn = document.getElementById('brightnessBtn');
-            const container = document.getElementById('brightnessSliderContainer');
-
-            brightnessActive = !brightnessActive;
-
-            if (brightnessActive) {
-                // Aktifkan brightness ke 100%
-                setScreenBrightness(100);
-                container.classList.add('show');
-                btn.textContent = '💡 Terang ON';
-                btn.classList.add('active');
-            } else {
-                // Matikan brightness (kembali ke 0%)
-                setScreenBrightness(0);
-                container.classList.remove('show');
-                btn.textContent = '💡 Terangin';
-                btn.classList.remove('active');
-            }
-        }
-
-        // ========== 3. FLASHLIGHT (SENTER) ==========
+        // ========== 2. SENTER ==========
         function toggleFlashlight() {
             const btn = document.getElementById('flashlightBtn');
             const vid = document.getElementById('face-video');
@@ -741,12 +623,9 @@
             for (const t of tracks) {
                 if (t.kind === 'video') { flashlightTrack = t; break; }
             }
-            if (!flashlightTrack) { alert('Tidak ada track video'); return; }
+            if (!flashlightTrack) { alert('❌ Senter tidak didukung. Pakai "Terangin Layar".'); return; }
             const cap = flashlightTrack.getCapabilities ? flashlightTrack.getCapabilities() : {};
-            if (!cap.torch) {
-                alert('❌ Senter tidak didukung. Coba pake "Terangin Layar"!');
-                return;
-            }
+            if (!cap.torch) { alert('❌ Senter tidak didukung. Pakai "Terangin Layar".'); return; }
             flashlightActive = !flashlightActive;
             flashlightTrack.applyConstraints({ advanced: [{ torch: flashlightActive }] }).catch(e => {
                 alert('Gagal nyalakan senter: ' + e.message);
@@ -754,6 +633,16 @@
             });
             btn.textContent = flashlightActive ? '🔦 Senter ON' : '🔦 Senter';
             btn.classList.toggle('active', flashlightActive);
+        }
+
+        // ========== 3. BRIGHTNESS ==========
+        function toggleBrightness() {
+            const overlay = document.getElementById('brightness-overlay');
+            const btn = document.getElementById('brightnessBtn');
+            brightnessActive = !brightnessActive;
+            overlay.classList.toggle('active', brightnessActive);
+            btn.textContent = brightnessActive ? '💡 Terang ON' : '💡 Terangin Layar';
+            btn.classList.toggle('active', brightnessActive);
         }
 
         // ========== 4. SWITCH KAMERA ==========
@@ -769,7 +658,7 @@
             }
         }
 
-        // ========== 5. DOMAIN EXPANSION ==========
+        // ========== 5. DOMAIN ==========
         const DOMAINS = {
             gojo: {
                 name: '無限 の 虚空',
@@ -939,10 +828,10 @@
             faceInit = false;
 
         const rankMap = [
-            { min: 0, max: 20, label: 'Subhuman', emoji: '🧟', desc: 'Banyak yang perlu dibenerin. Mulai dari gaya hidup.' },
-            { min: 21, max: 40, label: 'Normie', emoji: '😐', desc: 'Standar. Nggak jelek, cuma biasa aja.' },
-            { min: 41, max: 60, label: 'Chadlite', emoji: '💪', desc: 'Di atas rata-rata! Proporsi wajah lumayan.' },
-            { min: 61, max: 80, label: 'Chad', emoji: '🔥', desc: 'Wajah tegas, simetris, menarik.' },
+            { min: 0, max: 20, label: 'Subhuman', emoji: '🧟', desc: 'Banyak yang perlu dibenerin.' },
+            { min: 21, max: 40, label: 'Normie', emoji: '😐', desc: 'Standar. Nggak jelek.' },
+            { min: 41, max: 60, label: 'Chadlite', emoji: '💪', desc: 'Di atas rata-rata!' },
+            { min: 61, max: 80, label: 'Chad', emoji: '🔥', desc: 'Wajah tegas, simetris.' },
             { min: 81, max: 100, label: 'True Adam', emoji: '👑', desc: 'Puncak! Hampir sempurna.' }
         ];
 
@@ -996,7 +885,7 @@
             score = Math.max(0, Math.min(100, score));
             let rank = rankMap.find(r => score >= r.min && score <= r.max) || rankMap[0];
             const detail =
-                `Rasio W/H: ${rWH.toFixed(2)} (ideal 0.72-0.78)<br>Jarak Mata: ${eyeR.toFixed(2)} (ideal 0.44-0.50)<br>Simetri Rahang: ${(jawAsym*100).toFixed(1)}% (semakin kecil semakin baik)<br>Proporsi Bawah: ${lowerR.toFixed(2)} (ideal 0.45-0.55)`;
+                `Rasio W/H: ${rWH.toFixed(2)} (ideal 0.72-0.78)<br>Jarak Mata: ${eyeR.toFixed(2)} (ideal 0.44-0.50)<br>Simetri Rahang: ${(jawAsym*100).toFixed(1)}%<br>Proporsi Bawah: ${lowerR.toFixed(2)} (ideal 0.45-0.55)`;
             return { score, rank, detail };
         }
 
@@ -1068,7 +957,7 @@
                 const btn = document.getElementById('switchCamBtn');
                 btn.textContent = (facingMode === 'user') ? '🔄 Depan' : '🔄 Belakang';
             }).catch(err => {
-                alert('Gagal mengakses kamera: ' + err.message);
+                alert('Gagal akses kamera: ' + err.message);
                 faceRunning = false;
             });
         }
@@ -1086,29 +975,10 @@
             if (flashlightActive) toggleFlashlight();
         }
 
-        // ========== 7. EVENT BINDING ==========
+        // ========== 7. EVENT ==========
         document.getElementById('flashlightBtn').addEventListener('click', toggleFlashlight);
         document.getElementById('brightnessBtn').addEventListener('click', toggleBrightness);
         document.getElementById('switchCamBtn').addEventListener('click', switchCamera);
-
-        // Slider brightness
-        const slider = document.getElementById('brightnessSlider');
-        slider.addEventListener('input', function() {
-            const val = parseInt(this.value);
-            document.getElementById('brightnessValue').textContent = val + '%';
-            setScreenBrightness(val);
-            // Jika slider digeser ke 0, matikan mode brightness
-            if (val === 0 && brightnessActive) {
-                brightnessActive = false;
-                document.getElementById('brightnessBtn').textContent = '💡 Terangin';
-                document.getElementById('brightnessBtn').classList.remove('active');
-            } else if (val > 0 && !brightnessActive) {
-                brightnessActive = true;
-                document.getElementById('brightnessBtn').textContent = '💡 Terang ON';
-                document.getElementById('brightnessBtn').classList.add('active');
-                document.getElementById('brightnessSliderContainer').classList.add('show');
-            }
-        });
 
         tabBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -1120,14 +990,7 @@
                     tabFace.classList.remove('active');
                     stopFaceCamera();
                     startDomainCamera();
-                    // Matikan brightness kalo pindah ke domain
-                    if (brightnessActive) {
-                        setScreenBrightness(0);
-                        brightnessActive = false;
-                        document.getElementById('brightnessBtn').textContent = '💡 Terangin';
-                        document.getElementById('brightnessBtn').classList.remove('active');
-                        document.getElementById('brightnessSliderContainer').classList.remove('show');
-                    }
+                    if (brightnessActive) toggleBrightness();
                 } else if (t === 'tab-face') {
                     tabFace.classList.add('active');
                     tabDomain.classList.remove('active');
@@ -1201,13 +1064,10 @@
         // ========== 9. START ==========
         startDomainCamera();
 
-        console.log('🔥 Siap! Fitur Brightness PAKSA:');
-        console.log('   💡 "Terangin" — naikin brightness layar paksa');
-        console.log('   🎚️ Slider — atur tingkat kecerahan manual');
-        console.log('   🔦 Senter — buat kamera belakang (kalo support)');
-        console.log('   🔄 Ganti — switch kamera depan/belakang');
-        console.log('⚠️ Screen Brightness API masih experimental di beberapa browser.');
-        console.log('   Fallback: overlay putih transparan.');
+        console.log('🔥 Fix gepeng di Android!');
+        console.log('   Padding-bottom 75% biar 4:3.');
+        console.log('   Canvas & video full 100% tanpa stretch.');
+        console.log('   Kalo masih gepeng, kasih tahu.');
     </script>
 </body>
 </html>
