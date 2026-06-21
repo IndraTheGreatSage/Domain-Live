@@ -3,15 +3,21 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Domain Expansion | Jujutsu Kaisen</title>
+    <title>Domain + Face Check</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet" />
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
 
+    <!-- MediaPipe Hands (Domain) -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous">
+    </script>
+
+    <!-- MediaPipe FaceMesh (Face Check) -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous">
     </script>
 
     <style>
@@ -21,41 +27,105 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         html,
         body {
             width: 100%;
-            height: 100%;
-            overflow: hidden;
-            /* Biar gak ada scroll */;
+            min-height: 100%;
+            font-family: 'Inter', sans-serif;
+            background: #0a0a12;
+            color: #e0e0e0;
+            overflow-x: hidden;
         }
-
-        body {
-            font-family: 'Orbitron', sans-serif;
-            background: #0a0a0f;
+        .app-container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 16px 12px 30px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 8px;
-            /* dikit biar gak nempel pinggir */;
+            gap: 16px;
+        }
+        .app-header {
+            text-align: center;
+            padding: 10px 0 4px;
+        }
+        .app-header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+        }
+        .app-header p {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 2px;
+            letter-spacing: 1px;
         }
 
-        /* ===== KAMERA FULL LEBAR ===== */
+        /* ===== TAB ===== */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            background: #12121f;
+            padding: 6px;
+            border-radius: 60px;
+            border: 1px solid #1e1e32;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 0;
+            border: none;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            background: transparent;
+            color: #888;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-btn.active {
+            background: #1a1a30;
+            color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.08);
+        }
+        .tab-btn:hover {
+            color: #fff;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============================================================= */
+        /* TAB 1 — DOMAIN (sama seperti sebelumnya) */
+        /* ============================================================= */
         #camera-wrapper {
             position: relative;
             width: 100%;
-            max-width: 480px;
-            /* biar gak kegedean di tablet */;
             aspect-ratio: 4 / 3;
             border-radius: 20px;
             overflow: hidden;
-            border: 2px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 60px rgba(0, 100, 255, 0.1);
-            flex-shrink: 0;
-            /* biar gak keciut */;
+            border: 2px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 60px rgba(0, 100, 255, 0.06);
+            background: #000;
         }
-
         #camera-wrapper video {
             width: 100%;
             height: 100%;
@@ -63,7 +133,6 @@
             transform: scaleX(-1);
             object-fit: cover;
         }
-
         #camera-wrapper canvas {
             position: absolute;
             top: 0;
@@ -74,8 +143,6 @@
             transform: scaleX(-1);
             pointer-events: none;
         }
-
-        /* ===== HANDSIGN HINT (DI BAWAH KAMERA) ===== */
         #handsign-hint {
             position: absolute;
             bottom: 12px;
@@ -88,37 +155,30 @@
             border-radius: 40px;
             font-size: clamp(0.55rem, 2.2vw, 0.8rem);
             color: rgba(255, 255, 255, 0.6);
-            letter-spacing: 1px;
             border: 1px solid rgba(255, 255, 255, 0.05);
             white-space: nowrap;
             font-weight: 600;
             transition: all 0.3s;
+            pointer-events: none;
         }
-
-        /* ===== STATUS BAR (DI BAWAH) ===== */
         #status-bar {
             width: 100%;
-            max-width: 480px;
-            margin-top: 14px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(16px);
-            padding: 14px 18px;
+            padding: 12px 16px;
             border-radius: 60px;
             border: 1px solid rgba(255, 255, 255, 0.04);
             font-size: clamp(0.7rem, 2.5vw, 0.9rem);
-            font-weight: 400;
             color: rgba(255, 255, 255, 0.5);
             text-align: center;
-            letter-spacing: 0.5px;
-            flex-shrink: 0;
+            margin-top: 10px;
         }
-
         #status-bar .highlight {
             color: #00d4ff;
             font-weight: 700;
         }
 
-        /* ===== DOMAIN OVERLAY (FULLSCREEN) ===== */
+        /* Domain overlay (fullscreen) */
         #domain-overlay {
             position: fixed;
             top: 0;
@@ -134,11 +194,9 @@
             align-items: center;
             justify-content: center;
         }
-
         #domain-overlay.active {
             opacity: 1;
         }
-
         #domain-overlay .bg {
             position: absolute;
             top: 0;
@@ -148,7 +206,6 @@
             background: radial-gradient(circle at center, rgba(0, 20, 80, 0.92), rgba(0, 0, 0, 0.97));
             z-index: 0;
         }
-
         #domain-overlay .grid-effect {
             position: absolute;
             top: 0;
@@ -156,13 +213,11 @@
             width: 100%;
             height: 100%;
             z-index: 1;
-            background-image:
-                linear-gradient(rgba(0, 150, 255, 0.04) 1px, transparent 1px),
+            background-image: linear-gradient(rgba(0, 150, 255, 0.04) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0, 150, 255, 0.04) 1px, transparent 1px);
             background-size: 40px 40px;
             animation: gridPulse 3s ease-in-out infinite alternate;
         }
-
         @keyframes gridPulse {
             0% {
                 transform: scale(1) rotate(0deg);
@@ -173,8 +228,6 @@
                 opacity: 1;
             }
         }
-
-        /* ===== TEKS DOMAIN (BESAR DI HP) ===== */
         #domain-name {
             position: relative;
             z-index: 2;
@@ -188,7 +241,6 @@
             padding: 0 16px;
             line-height: 1.2;
         }
-
         @keyframes domainTextPulse {
             0% {
                 transform: scale(1) rotate(-1deg);
@@ -199,7 +251,6 @@
                 filter: blur(1px);
             }
         }
-
         #domain-sub {
             position: relative;
             z-index: 2;
@@ -214,68 +265,172 @@
             padding: 0 12px;
         }
 
-        /* ===== RESPONSIVE BANGET BUAT HP KECIL ===== */
-        @media (max-width: 480px) {
-            body {
-                padding: 6px;
-                justify-content: center;
-                gap: 6px;
-            }
-            #camera-wrapper {
-                border-radius: 14px;
-                border-width: 1px;
-                box-shadow: 0 0 30px rgba(0, 100, 255, 0.05);
-            }
-            #status-bar {
-                padding: 10px 12px;
-                border-radius: 30px;
-                margin-top: 8px;
-            }
-            #handsign-hint {
-                bottom: 8px;
-                padding: 4px 12px;
-                font-size: 0.5rem;
-                border-radius: 30px;
-            }
-            #domain-name {
-                font-size: clamp(2.2rem, 12vw, 3.5rem);
-                letter-spacing: 4px;
-            }
-            #domain-sub {
-                font-size: 0.6rem;
-                letter-spacing: 4px;
-            }
+        /* ============================================================= */
+        /* TAB 2 — FACE CHECK */
+        /* ============================================================= */
+        .face-container {
+            background: #12121f;
+            border-radius: 24px;
+            padding: 20px;
+            border: 1px solid #1e1e32;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+        }
+        .face-container h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 4px;
+            color: #f1c40f;
+        }
+        .face-container .sub {
+            text-align: center;
+            color: #888;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+        }
+        #face-camera-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.06);
+            background: #000;
+        }
+        #face-camera-wrapper video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            transform: scaleX(-1);
+            object-fit: cover;
+        }
+        #face-camera-wrapper canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            transform: scaleX(-1);
+            pointer-events: none;
+        }
+        #face-status {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #888;
+        }
+        #face-result {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 16px;
+            background: #0d0d1a;
+            border: 1px solid #1e1e32;
+            text-align: center;
+            display: none;
+        }
+        #face-result.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        #face-result .rank {
+            font-size: 2.8rem;
+            font-weight: 900;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 2px;
+        }
+        #face-result .desc {
+            margin-top: 6px;
+            font-size: 1rem;
+            color: #aaa;
+        }
+        #face-result .score {
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        #face-result .detail {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #555;
+            line-height: 1.6;
         }
 
-        /* ===== LANDSCAPE / HP MIRING ===== */
-        @media (max-height: 500px) and (orientation: landscape) {
-            #camera-wrapper {
-                max-width: 60vh;
-                aspect-ratio: 4 / 3;
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 480px) {
+            .app-container {
+                padding: 10px 8px 20px;
             }
-            #status-bar {
-                font-size: 0.6rem;
-                padding: 6px 14px;
-                margin-top: 6px;
+            .app-header h1 {
+                font-size: 1.3rem;
             }
-            #domain-name {
-                font-size: clamp(1.8rem, 8vh, 3rem);
+            .tab-btn {
+                font-size: 0.7rem;
+                padding: 8px 0;
+            }
+            .face-container {
+                padding: 12px;
+            }
+            #face-result .rank {
+                font-size: 2.2rem;
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== KAMERA ===== -->
-    <div id="camera-wrapper">
-        <video id="webcam" playsinline></video>
-        <canvas id="overlay-canvas" width="640" height="480"></canvas>
-        <div id="handsign-hint">✋ Angkat tanganmu</div>
-    </div>
+    <div class="app-container">
 
-    <!-- ===== STATUS BAR ===== -->
-    <div id="status-bar">
-        <span id="status-text">⏳ Menunggu tangan...</span>
+        <!-- ===== HEADER ===== -->
+        <div class="app-header">
+            <h1>⚡ Jujutsu + Face</h1>
+            <p>Domain Expansion · Face Rating</p>
+        </div>
+
+        <!-- ===== TAB ===== -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="tab-domain">🌀 Domain</button>
+            <button class="tab-btn" data-tab="tab-face">👁️ Face Check</button>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- TAB 1 — DOMAIN -->
+        <!-- ========================================================== -->
+        <div id="tab-domain" class="tab-content active">
+            <div id="camera-wrapper">
+                <video id="webcam" playsinline></video>
+                <canvas id="overlay-canvas" width="640" height="480"></canvas>
+                <div id="handsign-hint">✋ Angkat tanganmu</div>
+            </div>
+            <div id="status-bar">
+                <span id="status-text">⏳ Menunggu tangan...</span>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- TAB 2 — FACE CHECK -->
+        <!-- ========================================================== -->
+        <div id="tab-face" class="tab-content">
+            <div class="face-container">
+                <h2>👁️ Face Rating</h2>
+                <p class="sub">Deteksi wajah — analisis rahang, mata, proporsi</p>
+
+                <div id="face-camera-wrapper">
+                    <video id="face-video" playsinline></video>
+                    <canvas id="face-canvas" width="640" height="480"></canvas>
+                </div>
+                <div id="face-status">⏳ Menunggu wajah...</div>
+
+                <div id="face-result">
+                    <div class="rank" id="faceRank">—</div>
+                    <div class="desc" id="faceDesc"></div>
+                    <div class="score" id="faceScore"></div>
+                    <div class="detail" id="faceDetail"></div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- ===== DOMAIN OVERLAY ===== -->
@@ -287,11 +442,34 @@
     </div>
 
     <script>
-        // ============================================================
-        // 1. KONFIGURASI DOMAIN (Handsign → Domain)
-        // ============================================================
-        const DOMAINS = {
+        // ================================================================
+        // 1. TAB NAVIGASI
+        // ================================================================
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = {
+            domain: document.getElementById('tab-domain'),
+            face: document.getElementById('tab-face')
+        };
 
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const target = btn.dataset.tab;
+                Object.keys(tabContents).forEach(key => {
+                    tabContents[key].classList.toggle('active', key === target);
+                });
+                // Jika pindah ke face, aktifkan face detection
+                if (target === 'face') {
+                    initFaceDetection();
+                }
+            });
+        });
+
+        // ================================================================
+        // 2. DOMAIN EXPANSION (sama seperti sebelumnya)
+        // ================================================================
+        const DOMAINS = {
             gojo: {
                 name: '無限 の 虚空',
                 sub: '— Unlimited Void —',
@@ -306,7 +484,6 @@
                     return idxStraight && midStraight && ringFolded && pinkyFolded && thumbClose;
                 }
             },
-
             sukuna: {
                 name: '伏魔 御 廚子',
                 sub: '— Malevolent Shrine —',
@@ -320,7 +497,6 @@
                     return allStraight && thumbFolded;
                 }
             },
-
             megumi: {
                 name: '嵌合 暗翳 庭',
                 sub: '— Chimera Shadow Garden —',
@@ -336,7 +512,6 @@
                     return close && thumbTouchMid && ringFolded && pinkyFolded;
                 }
             },
-
             default: {
                 name: '虚式 茈',
                 sub: '— Hollow Purple —',
@@ -346,13 +521,10 @@
             }
         };
 
-        // ============================================================
-        // 2. STATE & DOM REFS
-        // ============================================================
-        let currentDomain = null;
-        let domainTimeout = null;
-        let lastGesture = 'none';
-        let cooldown = false;
+        let currentDomain = null,
+            domainTimeout = null,
+            lastGesture = 'none',
+            cooldown = false;
         const COOLDOWN_MS = 2000;
 
         const overlay = document.getElementById('domain-overlay');
@@ -365,23 +537,20 @@
             if (cooldown || currentDomain === key) return;
             const domain = DOMAINS[key] || DOMAINS.default;
             currentDomain = key;
-
             nameEl.textContent = domain.name;
             subEl.textContent = domain.sub;
             nameEl.style.color = domain.color;
             nameEl.style.textShadow = `0 0 80px ${domain.color}, 0 0 160px ${domain.color}`;
             subEl.style.color = domain.color;
             overlay.querySelector('.bg').style.background = domain.bg;
-
             overlay.classList.add('active');
-            document.body.style.background = `radial-gradient(circle at center, ${domain.color}11, #0a0a0f)`;
+            document.body.style.background = `radial-gradient(circle at center, ${domain.color}11, #0a0a12)`;
             statusText.innerHTML = `🌀 <span class="highlight">${domain.name}</span> — ${domain.sub}`;
-
             cooldown = true;
             if (domainTimeout) clearTimeout(domainTimeout);
             domainTimeout = setTimeout(() => {
                 overlay.classList.remove('active');
-                document.body.style.background = '#0a0a0f';
+                document.body.style.background = '#0a0a12';
                 statusText.innerHTML = '⏳ Menunggu handsign...';
                 currentDomain = null;
                 cooldown = false;
@@ -389,9 +558,7 @@
             }, 3000);
         }
 
-        // ============================================================
-        // 3. MEDIAPIPE
-        // ============================================================
+        // MediaPipe Hands
         const video = document.getElementById('webcam');
         const canvas = document.getElementById('overlay-canvas');
         const ctx = canvas.getContext('2d');
@@ -407,7 +574,6 @@
         const hands = new Hands({
             locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
         });
-
         hands.setOptions({
             maxNumHands: 1,
             modelComplexity: 1,
@@ -417,16 +583,10 @@
 
         hands.onResults((results) => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const lm = results.multiHandLandmarks[0];
-
                 drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: '#00d4ff', lineWidth: 2 });
-                drawLandmarks(ctx, lm, {
-                    color: '#ffffff',
-                    radius: 4,
-                    circleColor: 'rgba(0, 200, 255, 0.6)'
-                });
+                drawLandmarks(ctx, lm, { color: '#ffffff', radius: 4, circleColor: 'rgba(0, 200, 255, 0.6)' });
 
                 const detected = detectHandsign(lm);
                 if (detected) {
@@ -453,9 +613,6 @@
             }
         });
 
-        // ============================================================
-        // 4. KAMERA
-        // ============================================================
         const camera = new Camera(video, {
             onFrame: async () => { await hands.send({ image: video }); },
             width: 640,
@@ -463,7 +620,7 @@
         });
         camera.start();
 
-        // Fallback global
+        // Fallback MediaPipe drawing
         if (typeof drawConnectors === 'undefined') {
             window.drawConnectors = function(ctx, lm, conns, style) {
                 ctx.strokeStyle = style.color || '#00d4ff';
@@ -524,10 +681,213 @@
             ];
         }
 
-        console.log('🌀 Domain Expansion Mobile Ready!');
-        console.log('   Gojo   : telunjuk + tengah rapat');
-        console.log('   Sukuna : cakar (semua jari lurus)');
-        console.log('   Megumi : segitiga (telunjuk+tengah rapat, ibu jari sentuh)');
+        // ================================================================
+        // 3. FACE CHECK — Deteksi Wajah + Analisis
+        // ================================================================
+        let faceDetectionInitialized = false;
+
+        const faceVideo = document.getElementById('face-video');
+        const faceCanvas = document.getElementById('face-canvas');
+        const faceCtx = faceCanvas.getContext('2d');
+        const faceStatus = document.getElementById('face-status');
+        const faceResult = document.getElementById('face-result');
+        const faceRank = document.getElementById('faceRank');
+        const faceDesc = document.getElementById('faceDesc');
+        const faceScore = document.getElementById('faceScore');
+        const faceDetail = document.getElementById('faceDetail');
+
+        // Kategori
+        const rankMap = [
+            { min: 0, max: 20, label: 'Subhuman', emoji: '🧟', desc: 'Banyak yang perlu diperbaiki. Mulai dari gaya hidup dan perawatan diri.' },
+            { min: 21, max: 40, label: 'Normie', emoji: '😐', desc: 'Rata-rata. Tidak buruk, tapi belum standout.' },
+            { min: 41, max: 60, label: 'Chadlite', emoji: '💪', desc: 'Di atas rata-rata! Proporsi wajah cukup baik.' },
+            { min: 61, max: 80, label: 'Chad', emoji: '🔥', desc: 'Wajah tegas, simetris, maskulin/ feminin menarik.' },
+            { min: 81, max: 100, label: 'True Adam', emoji: '👑', desc: 'Puncak estetika! Hampir sempurna secara proporsi.' }
+        ];
+
+        function analyzeFace(landmarks) {
+            // Landmark index yang umum:
+            // 0-  : bibir, 10, 152, 454 dll
+            // Kita ambil beberapa titik:
+            // 234, 454 : kiri kanan lebar wajah (pipi)
+            // 10, 152 : atas-bawah (dahi-dagu)
+            // 33, 263 : mata kiri-kanan (sudut luar)
+            // 61, 291 : mata kiri-kanan (sudut dalam)
+            // 50, 280 : hidung
+            // 199, 419 : rahang bawah kiri-kanan
+            // 14, 0 : bibir atas-bawah
+
+            const w = faceCanvas.width,
+                h = faceCanvas.height;
+            const lm = landmarks;
+
+            // Fungsi jarak Euclidean
+            function dist(a, b) {
+                return Math.hypot(a.x - b.x, a.y - b.y);
+            }
+
+            // Fungsi jarak horizontal
+            function distX(a, b) { return Math.abs(a.x - b.x); }
+
+            // Fungsi jarak vertikal
+            function distY(a, b) { return Math.abs(a.y - b.y); }
+
+            // Lebar wajah (pipi kiri-kanan) - gunakan 234 dan 454
+            const faceWidth = dist(lm[234], lm[454]);
+            // Tinggi wajah (dahi ke dagu) - gunakan 10 dan 152
+            const faceHeight = dist(lm[10], lm[152]);
+
+            // Rasio lebar/tinggi (ideal ~0.7-0.8)
+            const ratioWH = faceWidth / faceHeight;
+
+            // Jarak mata (sudut luar kiri 33, kanan 263)
+            const eyeDistance = dist(lm[33], lm[263]);
+            // Jarak mata relatif terhadap lebar wajah (ideal ~0.45-0.5)
+            const eyeRatio = eyeDistance / faceWidth;
+
+            // Simetri: bandingkan posisi rahang kiri (199) dan kanan (419) terhadap sumbu vertikal
+            const midX = (lm[234].x + lm[454].x) / 2;
+            const jawLeft = lm[199].x;
+            const jawRight = lm[419].x;
+            const jawAsymmetry = Math.abs((jawLeft - midX) - (midX - jawRight)) / faceWidth;
+
+            // Jarak mata ke hidung (vertikal) untuk proporsi
+            const noseTip = lm[1]; // ujung hidung
+            const eyeCenterY = (lm[33].y + lm[263].y) / 2;
+            const noseHeight = distY(noseTip, lm[10]); // dari dahi ke hidung
+            const chinHeight = distY(lm[152], lm[14]); // dagu ke bibir bawah
+            // Rasio wajah bagian bawah (ideal ~0.5)
+            const lowerFaceRatio = chinHeight / faceHeight;
+
+            // Skor dimulai dari 50, lalu ditambah/dikurangi
+            let score = 50;
+
+            // 1. Rasio lebar/tinggi (ideal 0.72-0.78)
+            if (ratioWH > 0.7 && ratioWH < 0.8) score += 15;
+            else if (ratioWH > 0.65 && ratioWH < 0.85) score += 8;
+            else score -= 10;
+
+            // 2. Jarak mata (ideal 0.44-0.50)
+            if (eyeRatio > 0.42 && eyeRatio < 0.52) score += 15;
+            else if (eyeRatio > 0.38 && eyeRatio < 0.56) score += 8;
+            else score -= 10;
+
+            // 3. Simetri rahang (semakin kecil semakin baik)
+            if (jawAsymmetry < 0.03) score += 15;
+            else if (jawAsymmetry < 0.06) score += 8;
+            else score -= 10;
+
+            // 4. Proporsi bawah wajah (ideal 0.45-0.55)
+            if (lowerFaceRatio > 0.40 && lowerFaceRatio < 0.58) score += 10;
+            else if (lowerFaceRatio > 0.35 && lowerFaceRatio < 0.62) score += 5;
+            else score -= 8;
+
+            // 5. Jarak mata ke hidung (proporsi vertikal) - ideal 0.3-0.4
+            const eyeToNoseRatio = distY(noseTip, lm[33]) / faceHeight;
+            if (eyeToNoseRatio > 0.28 && eyeToNoseRatio < 0.42) score += 10;
+            else if (eyeToNoseRatio > 0.24 && eyeToNoseRatio < 0.46) score += 5;
+            else score -= 6;
+
+            // Clamp skor 0-100
+            score = Math.max(0, Math.min(100, score));
+
+            // Ambil kategori
+            let rank = rankMap.find(r => score >= r.min && score <= r.max);
+            if (!rank) rank = rankMap[0];
+
+            // Detail
+            const detail = `
+                Rasio W/H: ${ratioWH.toFixed(2)} (ideal 0.72-0.78)<br>
+                Jarak Mata: ${eyeRatio.toFixed(2)} (ideal 0.44-0.50)<br>
+                Simetri Rahang: ${(jawAsymmetry * 100).toFixed(1)}% (semakin kecil semakin baik)<br>
+                Proporsi Bawah: ${lowerFaceRatio.toFixed(2)} (ideal 0.45-0.55)
+            `;
+
+            return { score, rank, detail };
+        }
+
+        // Inisialisasi FaceMesh
+        let faceMesh = null;
+        let faceCamera = null;
+
+        function initFaceDetection() {
+            if (faceDetectionInitialized) return;
+            faceDetectionInitialized = true;
+
+            faceMesh = new FaceMesh({
+                locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
+            });
+
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.7,
+                minTrackingConfidence: 0.6
+            });
+
+            faceMesh.onResults((results) => {
+                faceCtx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
+
+                if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                    const landmarks = results.multiFaceLandmarks[0];
+
+                    // Gambar landmark (titik-titik wajah)
+                    for (const lm of landmarks) {
+                        const x = lm.x * faceCanvas.width;
+                        const y = lm.y * faceCanvas.height;
+                        faceCtx.beginPath();
+                        faceCtx.arc(x, y, 2, 0, 2 * Math.PI);
+                        faceCtx.fillStyle = 'rgba(0, 200, 255, 0.6)';
+                        faceCtx.fill();
+                    }
+
+                    // Analisis
+                    const result = analyzeFace(landmarks);
+                    const rank = result.rank;
+                    const score = result.score;
+
+                    // Tampilkan hasil
+                    faceResult.classList.add('show');
+                    faceRank.textContent = `${rank.emoji} ${rank.label}`;
+                    faceRank.style.color =
+                        score >= 80 ? '#f1c40f' :
+                        score >= 60 ? '#e67e22' :
+                        score >= 40 ? '#3498db' :
+                        score >= 20 ? '#95a5a6' : '#e74c3c';
+                    faceDesc.textContent = rank.desc;
+                    faceScore.textContent = `Skor: ${Math.round(score)} / 100`;
+                    faceDetail.innerHTML = result.detail;
+
+                    faceStatus.textContent = '✅ Wajah terdeteksi';
+
+                } else {
+                    faceResult.classList.remove('show');
+                    faceStatus.textContent = '⏳ Tidak ada wajah';
+                }
+            });
+
+            // Kamera untuk face
+            faceCamera = new Camera(faceVideo, {
+                onFrame: async () => {
+                    await faceMesh.send({ image: faceVideo });
+                },
+                width: 640,
+                height: 480
+            });
+            faceCamera.start();
+        }
+
+        // ================================================================
+        // 4. INIT otomatis untuk face jika tab face aktif pertama kali
+        // ================================================================
+        // Jika tab face aktif saat load, inisialisasi
+        if (document.getElementById('tab-face').classList.contains('active')) {
+            initFaceDetection();
+        }
+
+        console.log('✅ Web siap! Tab Domain + Face Check.');
+        console.log('   Handsign: Gojo, Sukuna, Megumi');
+        console.log('   Face Check: deteksi wajah realtime, analisis proporsi.');
     </script>
 </body>
 </html>
