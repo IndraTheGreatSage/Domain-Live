@@ -2,49 +2,58 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Domain Expansion | Jujutsu Kaisen</title>
 
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet" />
 
-    <!-- MediaPipe Hands -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous">
+    </script>
 
     <style>
-        /* ===== RESET & BASE ===== */
+        /* ===== RESET ===== */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            /* Biar gak ada scroll */;
+        }
+
         body {
             font-family: 'Orbitron', sans-serif;
             background: #0a0a0f;
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-            position: relative;
-            transition: background 0.3s ease;
+            padding: 8px;
+            /* dikit biar gak nempel pinggir */;
         }
 
-        /* ===== KAMERA & CANVAS ===== */
+        /* ===== KAMERA FULL LEBAR ===== */
         #camera-wrapper {
             position: relative;
-            width: 500px;
-            max-width: 92vw;
+            width: 100%;
+            max-width: 480px;
+            /* biar gak kegedean di tablet */;
             aspect-ratio: 4 / 3;
-            border-radius: 24px;
+            border-radius: 20px;
             overflow: hidden;
             border: 2px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 80px rgba(0, 100, 255, 0.08);
-            z-index: 10;
+            box-shadow: 0 0 60px rgba(0, 100, 255, 0.1);
+            flex-shrink: 0;
+            /* biar gak keciut */;
         }
 
         #camera-wrapper video {
@@ -52,20 +61,64 @@
             height: 100%;
             display: block;
             transform: scaleX(-1);
+            object-fit: cover;
         }
 
         #camera-wrapper canvas {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100% !important;
+            height: 100% !important;
             display: block;
             transform: scaleX(-1);
             pointer-events: none;
         }
 
-        /* ===== DOMAIN OVERLAY (FULL SCREEN EFFECT) ===== */
+        /* ===== HANDSIGN HINT (DI BAWAH KAMERA) ===== */
+        #handsign-hint {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: clamp(0.55rem, 2.2vw, 0.8rem);
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 1px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        /* ===== STATUS BAR (DI BAWAH) ===== */
+        #status-bar {
+            width: 100%;
+            max-width: 480px;
+            margin-top: 14px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(16px);
+            padding: 14px 18px;
+            border-radius: 60px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.5);
+            text-align: center;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        #status-bar .highlight {
+            color: #00d4ff;
+            font-weight: 700;
+        }
+
+        /* ===== DOMAIN OVERLAY (FULLSCREEN) ===== */
         #domain-overlay {
             position: fixed;
             top: 0;
@@ -73,7 +126,7 @@
             width: 100vw;
             height: 100vh;
             pointer-events: none;
-            z-index: 50;
+            z-index: 999;
             opacity: 0;
             transition: opacity 1.2s cubic-bezier(0.23, 1, 0.32, 1);
             display: flex;
@@ -96,7 +149,6 @@
             z-index: 0;
         }
 
-        /* Efek partikel / grid khas domain */
         #domain-overlay .grid-effect {
             position: absolute;
             top: 0;
@@ -105,9 +157,9 @@
             height: 100%;
             z-index: 1;
             background-image:
-                linear-gradient(rgba(0, 150, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 150, 255, 0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
+                linear-gradient(rgba(0, 150, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 150, 255, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
             animation: gridPulse 3s ease-in-out infinite alternate;
         }
 
@@ -117,23 +169,23 @@
                 opacity: 0.4;
             }
             100% {
-                transform: scale(1.4) rotate(3deg);
+                transform: scale(1.3) rotate(2deg);
                 opacity: 1;
             }
         }
 
-        /* ===== TEKS DOMAIN ===== */
+        /* ===== TEKS DOMAIN (BESAR DI HP) ===== */
         #domain-name {
             position: relative;
             z-index: 2;
             font-family: 'Noto Sans JP', 'Orbitron', sans-serif;
-            font-size: clamp(2.8rem, 10vw, 6rem);
+            font-size: clamp(2.8rem, 14vw, 6rem);
             font-weight: 900;
             text-align: center;
-            letter-spacing: 12px;
+            letter-spacing: 6px;
             text-shadow: 0 0 60px currentColor, 0 0 120px currentColor;
             animation: domainTextPulse 2.5s ease-in-out infinite alternate;
-            padding: 0 20px;
+            padding: 0 16px;
             line-height: 1.2;
         }
 
@@ -143,8 +195,8 @@
                 filter: blur(0px);
             }
             100% {
-                transform: scale(1.06) rotate(1deg);
-                filter: blur(2px);
+                transform: scale(1.05) rotate(1deg);
+                filter: blur(1px);
             }
         }
 
@@ -152,72 +204,62 @@
             position: relative;
             z-index: 2;
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(0.8rem, 1.8vw, 1.4rem);
-            letter-spacing: 14px;
+            font-size: clamp(0.7rem, 2.5vw, 1.2rem);
+            letter-spacing: 8px;
             text-transform: uppercase;
             opacity: 0.6;
             margin-top: 4px;
             color: #fff;
-        }
-
-        /* ===== STATUS BAR ===== */
-        #status-bar {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(20px);
-            padding: 12px 28px;
-            border-radius: 60px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            font-size: 0.85rem;
-            letter-spacing: 1px;
-            color: rgba(255, 255, 255, 0.5);
             text-align: center;
-            transition: all 0.3s;
-            max-width: 90vw;
+            padding: 0 12px;
         }
 
-        #status-bar .highlight {
-            color: #00d4ff;
-            font-weight: 700;
-        }
-
-        /* ===== LIST HANDSIGN DI KAMERA ===== */
-        #handsign-hint {
-            position: absolute;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 20;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(12px);
-            padding: 6px 18px;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.5);
-            letter-spacing: 2px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            white-space: nowrap;
-        }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 600px) {
+        /* ===== RESPONSIVE BANGET BUAT HP KECIL ===== */
+        @media (max-width: 480px) {
+            body {
+                padding: 6px;
+                justify-content: center;
+                gap: 6px;
+            }
             #camera-wrapper {
-                width: 95vw;
-                aspect-ratio: 4/3;
+                border-radius: 14px;
+                border-width: 1px;
+                box-shadow: 0 0 30px rgba(0, 100, 255, 0.05);
             }
             #status-bar {
-                font-size: 0.7rem;
-                padding: 10px 16px;
-                bottom: 16px;
+                padding: 10px 12px;
+                border-radius: 30px;
+                margin-top: 8px;
             }
             #handsign-hint {
-                font-size: 0.55rem;
+                bottom: 8px;
                 padding: 4px 12px;
-                bottom: 10px;
+                font-size: 0.5rem;
+                border-radius: 30px;
+            }
+            #domain-name {
+                font-size: clamp(2.2rem, 12vw, 3.5rem);
+                letter-spacing: 4px;
+            }
+            #domain-sub {
+                font-size: 0.6rem;
+                letter-spacing: 4px;
+            }
+        }
+
+        /* ===== LANDSCAPE / HP MIRING ===== */
+        @media (max-height: 500px) and (orientation: landscape) {
+            #camera-wrapper {
+                max-width: 60vh;
+                aspect-ratio: 4 / 3;
+            }
+            #status-bar {
+                font-size: 0.6rem;
+                padding: 6px 14px;
+                margin-top: 6px;
+            }
+            #domain-name {
+                font-size: clamp(1.8rem, 8vh, 3rem);
             }
         }
     </style>
@@ -228,20 +270,20 @@
     <div id="camera-wrapper">
         <video id="webcam" playsinline></video>
         <canvas id="overlay-canvas" width="640" height="480"></canvas>
-        <div id="handsign-hint">✋ Tangan terdeteksi — buat handsign</div>
-    </div>
-
-    <!-- ===== DOMAIN OVERLAY (FULL SCREEN) ===== -->
-    <div id="domain-overlay">
-        <div class="bg"></div>
-        <div class="grid-effect"></div>
-        <div id="domain-name">無限 の 虚空</div>
-        <div id="domain-sub">— Unlimited Void —</div>
+        <div id="handsign-hint">✋ Angkat tanganmu</div>
     </div>
 
     <!-- ===== STATUS BAR ===== -->
     <div id="status-bar">
         <span id="status-text">⏳ Menunggu tangan...</span>
+    </div>
+
+    <!-- ===== DOMAIN OVERLAY ===== -->
+    <div id="domain-overlay">
+        <div class="bg"></div>
+        <div class="grid-effect"></div>
+        <div id="domain-name">無限 の 虚空</div>
+        <div id="domain-sub">— Unlimited Void —</div>
     </div>
 
     <script>
@@ -250,80 +292,51 @@
         // ============================================================
         const DOMAINS = {
 
-            // ===== GOJO — Unlimited Void =====
             gojo: {
                 name: '無限 の 虚空',
                 sub: '— Unlimited Void —',
                 color: '#00d4ff',
                 bg: 'radial-gradient(circle at center, rgba(0,30,80,0.95), rgba(0,0,20,0.98))',
-                // Ciri: telunjuk + jari tengah rapat, jari lainnya nempel ke telapak
-                check: (landmarks) => {
-                    // Tip: 8=telunjuk, 12=tengah, 16=manis, 20=kelingking
-                    const tips = [8, 12, 16, 20];
-                    const dip = [6, 10, 14, 18]; // sendi kedua
-                    const mcp = [5, 9, 13, 17]; // pangkal
-
-                    // Telunjuk & tengah lurus (tip di atas dip)
-                    const idxStraight = landmarks[8].y < landmarks[6].y;
-                    const midStraight = landmarks[12].y < landmarks[10].y;
-
-                    // Manis & kelingking nempel (tip di bawah dip)
-                    const ringFolded = landmarks[16].y > landmarks[14].y;
-                    const pinkyFolded = landmarks[20].y > landmarks[18].y;
-
-                    // Ibu jari (4) nempel ke telapak (cek x dekat dengan pangkal telunjuk)
-                    const thumbClose = Math.abs(landmarks[4].x - landmarks[5].x) < 0.08;
-
+                check: (lm) => {
+                    const idxStraight = lm[8].y < lm[6].y;
+                    const midStraight = lm[12].y < lm[10].y;
+                    const ringFolded = lm[16].y > lm[14].y;
+                    const pinkyFolded = lm[20].y > lm[18].y;
+                    const thumbClose = Math.abs(lm[4].x - lm[5].x) < 0.08;
                     return idxStraight && midStraight && ringFolded && pinkyFolded && thumbClose;
                 }
             },
 
-            // ===== SUKUNA — Malevolent Shrine =====
             sukuna: {
                 name: '伏魔 御 廚子',
                 sub: '— Malevolent Shrine —',
                 color: '#ff2d55',
                 bg: 'radial-gradient(circle at center, rgba(80,0,20,0.95), rgba(20,0,0,0.98))',
-                // Ciri: cakar — semua jari lurus kecuali ibu jari melipat ke dalam
-                check: (landmarks) => {
+                check: (lm) => {
                     const tips = [8, 12, 16, 20];
                     const dip = [6, 10, 14, 18];
-
-                    // Semua jari (telunjuk, tengah, manis, kelingking) lurus
-                    const allStraight = tips.every((t, i) => landmarks[t].y < landmarks[dip[i]].y);
-
-                    // Ibu jari (4) melipat ke dalam (dekat dengan telapak)
-                    const thumbFolded = landmarks[4].x > landmarks[3].x + 0.02;
-
+                    const allStraight = tips.every((t, i) => lm[t].y < lm[dip[i]].y);
+                    const thumbFolded = lm[4].x > lm[3].x + 0.02;
                     return allStraight && thumbFolded;
                 }
             },
 
-            // ===== MEGUMI — Chimera Shadow Garden =====
             megumi: {
                 name: '嵌合 暗翳 庭',
                 sub: '— Chimera Shadow Garden —',
                 color: '#7c3aed',
                 bg: 'radial-gradient(circle at center, rgba(40,0,80,0.95), rgba(10,0,20,0.98))',
-                // Ciri: jari membentuk segitiga (telunjuk & tengah rapat, ibu jari menyentuh ujung jari)
-                check: (landmarks) => {
-                    // Telunjuk & tengah rapat (jarak tip < 0.04)
-                    const idxTip = landmarks[8];
-                    const midTip = landmarks[12];
-                    const close = Math.hypot(idxTip.x - midTip.x, idxTip.y - midTip.y) < 0.04;
-
-                    // Ibu jari menyentuh ujung jari tengah (jarak < 0.05)
-                    const thumbTouchMid = Math.hypot(landmarks[4].x - midTip.x, landmarks[4].y - midTip.y) < 0.06;
-
-                    // Manis & kelingking nempel ke telapak
-                    const ringFolded = landmarks[16].y > landmarks[14].y;
-                    const pinkyFolded = landmarks[20].y > landmarks[18].y;
-
+                check: (lm) => {
+                    const idx = lm[8],
+                        mid = lm[12];
+                    const close = Math.hypot(idx.x - mid.x, idx.y - mid.y) < 0.04;
+                    const thumbTouchMid = Math.hypot(lm[4].x - mid.x, lm[4].y - mid.y) < 0.06;
+                    const ringFolded = lm[16].y > lm[14].y;
+                    const pinkyFolded = lm[20].y > lm[18].y;
                     return close && thumbTouchMid && ringFolded && pinkyFolded;
                 }
             },
 
-            // ===== DOMAIN DEFAULT (buat fallback) =====
             default: {
                 name: '虚式 茈',
                 sub: '— Hollow Purple —',
@@ -334,58 +347,40 @@
         };
 
         // ============================================================
-        // 2. STATE
+        // 2. STATE & DOM REFS
         // ============================================================
         let currentDomain = null;
         let domainTimeout = null;
         let lastGesture = 'none';
         let cooldown = false;
-        const COOLDOWN_MS = 2000; // 2 detik biar gak spam
+        const COOLDOWN_MS = 2000;
 
-        const domainOverlay = document.getElementById('domain-overlay');
-        const domainNameEl = document.getElementById('domain-name');
-        const domainSubEl = document.getElementById('domain-sub');
+        const overlay = document.getElementById('domain-overlay');
+        const nameEl = document.getElementById('domain-name');
+        const subEl = document.getElementById('domain-sub');
         const statusText = document.getElementById('status-text');
+        const hintEl = document.getElementById('handsign-hint');
 
-        // ============================================================
-        // 3. FUNGSI DOMAIN
-        // ============================================================
-        function triggerDomain(domainKey) {
-            if (cooldown) return;
-            if (currentDomain === domainKey) return;
+        function triggerDomain(key) {
+            if (cooldown || currentDomain === key) return;
+            const domain = DOMAINS[key] || DOMAINS.default;
+            currentDomain = key;
 
-            const domain = DOMAINS[domainKey] || DOMAINS.default;
-            currentDomain = domainKey;
+            nameEl.textContent = domain.name;
+            subEl.textContent = domain.sub;
+            nameEl.style.color = domain.color;
+            nameEl.style.textShadow = `0 0 80px ${domain.color}, 0 0 160px ${domain.color}`;
+            subEl.style.color = domain.color;
+            overlay.querySelector('.bg').style.background = domain.bg;
 
-            // Set visual overlay
-            domainNameEl.textContent = domain.name;
-            domainSubEl.textContent = domain.sub;
-            domainNameEl.style.color = domain.color;
-            domainNameEl.style.textShadow = `0 0 80px ${domain.color}, 0 0 160px ${domain.color}`;
-            domainSubEl.style.color = domain.color;
-
-            // Ubah background overlay
-            const bg = domainOverlay.querySelector('.bg');
-            bg.style.background = domain.bg;
-
-            // Aktifkan overlay
-            domainOverlay.classList.add('active');
-
-            // Ubah background body sedikit
+            overlay.classList.add('active');
             document.body.style.background = `radial-gradient(circle at center, ${domain.color}11, #0a0a0f)`;
-
-            // Status
             statusText.innerHTML = `🌀 <span class="highlight">${domain.name}</span> — ${domain.sub}`;
 
-            // Cooldown
             cooldown = true;
-
-            // Clear timeout sebelumnya
             if (domainTimeout) clearTimeout(domainTimeout);
-
-            // Matikan overlay setelah 3 detik
             domainTimeout = setTimeout(() => {
-                domainOverlay.classList.remove('active');
+                overlay.classList.remove('active');
                 document.body.style.background = '#0a0a0f';
                 statusText.innerHTML = '⏳ Menunggu handsign...';
                 currentDomain = null;
@@ -395,33 +390,22 @@
         }
 
         // ============================================================
-        // 4. MEDIAPIPE — DETEKSI HANDSIGN
+        // 3. MEDIAPIPE
         // ============================================================
-        const videoElement = document.getElementById('webcam');
-        const canvasElement = document.getElementById('overlay-canvas');
-        const canvasCtx = canvasElement.getContext('2d');
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('overlay-canvas');
+        const ctx = canvas.getContext('2d');
 
-        // Fungsi cek semua handsign
-        function detectHandsign(landmarks) {
-            // Coba semua domain
+        function detectHandsign(lm) {
             for (const [key, domain] of Object.entries(DOMAINS)) {
                 if (key === 'default') continue;
-                try {
-                    if (domain.check(landmarks)) {
-                        return key;
-                    }
-                } catch (e) {
-                    // skip
-                }
+                try { if (domain.check(lm)) return key; } catch (e) {}
             }
             return null;
         }
 
-        // Inisialisasi MediaPipe Hands
         const hands = new Hands({
-            locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-            }
+            locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
         });
 
         hands.setOptions({
@@ -432,104 +416,81 @@
         });
 
         hands.onResults((results) => {
-            // Clear canvas
-            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Gambar landmark tangan
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                const landmarks = results.multiHandLandmarks[0];
+                const lm = results.multiHandLandmarks[0];
 
-                // Gambar landmark
-                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
-                    color: '#00d4ff',
-                    lineWidth: 2
-                });
-                drawLandmarks(canvasCtx, landmarks, {
+                drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: '#00d4ff', lineWidth: 2 });
+                drawLandmarks(ctx, lm, {
                     color: '#ffffff',
-                    lineWidth: 1,
                     radius: 4,
                     circleColor: 'rgba(0, 200, 255, 0.6)'
                 });
 
-                // === DETEKSI HANDSIGN ===
-                const detected = detectHandsign(landmarks);
-                const hint = document.getElementById('handsign-hint');
-
+                const detected = detectHandsign(lm);
                 if (detected) {
-                    // Ubah hint
-                    const domain = DOMAINS[detected];
-                    hint.innerHTML = `🔥 ${domain.name} — ${domain.sub}`;
-                    hint.style.color = domain.color;
-                    hint.style.borderColor = domain.color + '44';
-
-                    // Trigger domain (kalo beda)
+                    const d = DOMAINS[detected];
+                    hintEl.innerHTML = `🔥 ${d.name}`;
+                    hintEl.style.color = d.color;
+                    hintEl.style.borderColor = d.color + '44';
                     if (detected !== lastGesture) {
                         lastGesture = detected;
                         triggerDomain(detected);
                     }
                 } else {
-                    hint.innerHTML = '✋ Tangan terdeteksi — buat handsign';
-                    hint.style.color = 'rgba(255,255,255,0.5)';
-                    hint.style.borderColor = 'rgba(255,255,255,0.05)';
+                    hintEl.innerHTML = '✋ Angkat tanganmu';
+                    hintEl.style.color = 'rgba(255,255,255,0.5)';
+                    hintEl.style.borderColor = 'rgba(255,255,255,0.05)';
                     lastGesture = 'none';
                 }
-
-                statusText.innerHTML = `👋 Tangan terdeteksi — ${results.multiHandLandmarks.length} tangan`;
-
+                statusText.innerHTML = `👋 Tangan terdeteksi`;
             } else {
-                document.getElementById('handsign-hint').innerHTML = '✋ Tidak ada tangan';
-                document.getElementById('handsign-hint').style.color = 'rgba(255,255,255,0.3)';
+                hintEl.innerHTML = '✋ Angkat tanganmu';
+                hintEl.style.color = 'rgba(255,255,255,0.3)';
                 statusText.innerHTML = '⏳ Tidak ada tangan';
                 lastGesture = 'none';
             }
         });
 
         // ============================================================
-        // 5. KAMERA
+        // 4. KAMERA
         // ============================================================
-        const camera = new Camera(videoElement, {
-            onFrame: async () => {
-                await hands.send({ image: videoElement });
-            },
+        const camera = new Camera(video, {
+            onFrame: async () => { await hands.send({ image: video }); },
             width: 640,
             height: 480
         });
         camera.start();
 
-        // ============================================================
-        // 6. CATATAN: drawConnectors & drawLandmarks dari MediaPipe
-        // Kita panggil langsung dari global scope MediaPipe
-        // ============================================================
-        // MediaPipe udah nyediain drawConnectors dan drawLandmarks global
-        // Tapi kalo error, kita define manual pake fungsi simpel
+        // Fallback global
         if (typeof drawConnectors === 'undefined') {
-            window.drawConnectors = function(ctx, landmarks, connections, style) {
+            window.drawConnectors = function(ctx, lm, conns, style) {
                 ctx.strokeStyle = style.color || '#00d4ff';
                 ctx.lineWidth = style.lineWidth || 2;
-                for (const conn of connections) {
-                    const start = landmarks[conn[0]];
-                    const end = landmarks[conn[1]];
-                    if (start && end) {
+                for (const c of conns) {
+                    const a = lm[c[0]],
+                        b = lm[c[1]];
+                    if (a && b) {
                         ctx.beginPath();
-                        ctx.moveTo(start.x * ctx.canvas.width, start.y * ctx.canvas.height);
-                        ctx.lineTo(end.x * ctx.canvas.width, end.y * ctx.canvas.height);
+                        ctx.moveTo(a.x * ctx.canvas.width, a.y * ctx.canvas.height);
+                        ctx.lineTo(b.x * ctx.canvas.width, b.y * ctx.canvas.height);
                         ctx.stroke();
                     }
                 }
             };
         }
         if (typeof drawLandmarks === 'undefined') {
-            window.drawLandmarks = function(ctx, landmarks, style) {
+            window.drawLandmarks = function(ctx, lm, style) {
                 const r = style.radius || 4;
-                const color = style.color || '#ffffff';
-                for (const lm of landmarks) {
+                for (const p of lm) {
                     ctx.beginPath();
-                    ctx.arc(lm.x * ctx.canvas.width, lm.y * ctx.canvas.height, r, 0, 2 * Math.PI);
-                    ctx.fillStyle = color;
+                    ctx.arc(p.x * ctx.canvas.width, p.y * ctx.canvas.height, r, 0, 2 * Math.PI);
+                    ctx.fillStyle = style.color || '#fff';
                     ctx.fill();
                     if (style.circleColor) {
                         ctx.beginPath();
-                        ctx.arc(lm.x * ctx.canvas.width, lm.y * ctx.canvas.height, r * 1.8, 0, 2 * Math.PI);
+                        ctx.arc(p.x * ctx.canvas.width, p.y * ctx.canvas.height, r * 1.8, 0, 2 * Math.PI);
                         ctx.strokeStyle = style.circleColor;
                         ctx.lineWidth = 1;
                         ctx.stroke();
@@ -563,11 +524,10 @@
             ];
         }
 
-        console.log('🌀 Jujutsu Kaisen — Domain Expansion Detector siap!');
-        console.log('   Coba handsign:');
-        console.log('   - Gojo    : telunjuk + tengah rapat, jari lain nempel');
-        console.log('   - Sukuna  : semua jari lurus (cakar), ibu jari lipat');
-        console.log('   - Megumi  : segitiga (telunjuk+tengah rapat, ibu jari sentuh ujung)');
+        console.log('🌀 Domain Expansion Mobile Ready!');
+        console.log('   Gojo   : telunjuk + tengah rapat');
+        console.log('   Sukuna : cakar (semua jari lurus)');
+        console.log('   Megumi : segitiga (telunjuk+tengah rapat, ibu jari sentuh)');
     </script>
 </body>
 </html>
